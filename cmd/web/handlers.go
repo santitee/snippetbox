@@ -1,8 +1,9 @@
 package main
 
 import (
-	"log"
+	"fmt"
 	"net/http"
+	"strconv"
 )
 
 func home(w http.ResponseWriter, r *http.Request) {
@@ -11,7 +12,13 @@ func home(w http.ResponseWriter, r *http.Request) {
 
 // Add a showSnippet hanler function.
 func showSnippet(w http.ResponseWriter, r *http.Request) {
-	w.Write([]byte("Display a specific snippet..."))
+	id, err := strconv.Atoi(r.URL.Query().Get("id"))
+	if err != nil || id < 1 {
+		http.NotFound(w,r)
+		return
+	}
+	fmt.Fprintf(w, "Display a specific snippet with ID %d...\n", id)
+	//w.Write([]byte("Display a specific snippet..."))
 }
 
 // Add a createSnippet handler function
@@ -28,19 +35,12 @@ func createSnippet(w http.ResponseWriter, r *http.Request) {
 
 		w.Header().Set("Content-Type", "application/json")
 		w.Write([]byte(`{"name":"Santi"}`))
+
+		w.Header()["X-XSS-Protection"]= []string{"1; mode=block"}
+		w.Header()["Date"] = nil
+
 		http.Error(w, "Method Not Allowed", 405)
 		return
 	}
 	w.Write([]byte("Create a new snippet..."))
-}
-
-func main() {
-	mux := http.NewServeMux()
-	mux.HandleFunc("/", home)
-	mux.HandleFunc("/snippet", showSnippet)
-	mux.HandleFunc("/snippet/create", createSnippet)
-
-	log.Println("Starting server on :4000")
-	err := http.ListenAndServe(":4000", mux)
-	log.Fatal(err)
 }
